@@ -8,6 +8,7 @@ extends CharacterBody3D
 
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
+@onready var weapon: WeaponBase = $Head/Camera3D/Rifle
 
 var _jump_buffer := 0.0
 var _coyote := 0.0
@@ -18,6 +19,7 @@ var _landing_dip := 0.0  ## 落地镜头下压角（度），自动回弹
 func _ready() -> void:
 	if config == null:
 		config = MovementConfig.new()
+	weapon.shooter_body = self
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -31,6 +33,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	# 射击输入（T7）
+	if Input.is_action_pressed("shoot"):
+		weapon.try_fire()
+
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var sprinting := Input.is_action_pressed("sprint") and input.length_squared() > 0.0
 	var speed := config.sprint_speed if sprinting else config.walk_speed
