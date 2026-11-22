@@ -1,7 +1,8 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/dummy.tscn" id="2_dummy"]
+[ext_resource type="PackedScene" path="res://scenes/ui/crosshair.tscn" id="3_crosshair"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
 size = Vector3(40, 1, 40)
@@ -21,6 +22,8 @@ sky = SubResource("Sky_1")
 [node name="ShootingRange" type="Node3D"]
 
 [node name="Player" parent="." instance=ExtResource("1_player")]
+
+[node name="CrosshairLayer" parent="." instance=ExtResource("3_crosshair")]
 
 [node name="Floor" type="StaticBody3D" parent="."]
 

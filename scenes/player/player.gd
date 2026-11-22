@@ -17,6 +17,7 @@ var _landing_dip := 0.0  ## 落地镜头下压角（度），自动回弹
 
 
 func _ready() -> void:
+	add_to_group("player")
 	if config == null:
 		config = MovementConfig.new()
 	weapon.shooter_body = self

@@ -48,9 +48,11 @@ func _apply_hit(info: Dictionary) -> void:
 	var body := collider as Node
 	if body.has_method("apply_damage"):
 		body.apply_damage(info)
+		info["damageable"] = body
 		return
 	for child in body.find_children("*", "Damageable", false, false):
 		child.apply_damage(info)
+		info["damageable"] = child
 		return
 
 
