@@ -64,6 +64,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if dead:
 		if event.is_action_pressed("restart"):
 			get_tree().reload_current_scene()
+		elif event.is_action_pressed("menu"):
+			get_tree().change_scene_to_file("res://scenes/ui/menu.tscn")
 		return
 	if event.is_action_pressed("ui_cancel"):
 		# Esc 释放/捕获鼠标（释放后可点窗口控制）

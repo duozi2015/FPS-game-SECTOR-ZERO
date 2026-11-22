@@ -48,7 +48,7 @@ func _on_weapon_changed(weapon: WeaponBase) -> void:
 
 
 func show_game_over(wave: int) -> void:
-	_game_over_label.text = "GAME OVER · 撑到第 %d 波 · 按 R 重开" % wave
+	_game_over_label.text = "GAME OVER · 撑到第 %d 波 · R 重开 · M 主菜单" % wave
 	_game_over_label.visible = true
 
 

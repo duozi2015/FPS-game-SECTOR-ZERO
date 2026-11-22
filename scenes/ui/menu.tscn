@@ -1,0 +1,84 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/menu.gd" id="1_menu"]
+
+[sub_resource type="Gradient" id="Grad_bg"]
+offsets = PackedFloat32Array(0, 0.65, 1)
+colors = PackedColorArray(0.02, 0.02, 0.05, 1, 0.06, 0.04, 0.08, 1, 0.12, 0.07, 0.04, 1)
+
+[node name="Menu" type="CanvasLayer"]
+
+[node name="Bg" type="ColorRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.02, 0.02, 0.05, 1)
+
+[node name="Root" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Title" type="Label" parent="Root"]
+anchor_left = 0.5
+anchor_top = 0.18
+anchor_right = 0.5
+anchor_bottom = 0.18
+offset_left = -400
+offset_right = 400
+offset_bottom = 110
+theme_override_colors/font_color = Color(1, 0.55, 0.2, 1)
+theme_override_font_sizes/font_size = 72
+horizontal_alignment = 1
+text = "SECTOR ZERO"
+
+[node name="Subtitle" type="Label" parent="Root"]
+anchor_left = 0.5
+anchor_top = 0.18
+anchor_right = 0.5
+anchor_bottom = 0.18
+offset_left = -400
+offset_top = 116
+offset_right = 400
+offset_bottom = 150
+theme_override_colors/font_color = Color(0.55, 0.6, 0.7, 1)
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+text = "复古竞技场射击 · 活下来"
+
+[node name="Buttons" type="VBoxContainer" parent="Root"]
+anchor_left = 0.5
+anchor_top = 0.42
+anchor_right = 0.5
+anchor_bottom = 0.42
+offset_left = -160
+offset_right = 160
+offset_bottom = 220
+theme_override_constants/separation = 18
+
+[node name="BtnArena" type="Button" parent="Root/Buttons"]
+custom_minimum_size = Vector2(320, 52)
+theme_override_font_sizes/font_size = 22
+text = "室内竞技场"
+
+[node name="BtnCity" type="Button" parent="Root/Buttons"]
+custom_minimum_size = Vector2(320, 52)
+theme_override_font_sizes/font_size = 22
+text = "城市街区（室外）"
+
+[node name="BtnQuit" type="Button" parent="Root/Buttons"]
+custom_minimum_size = Vector2(320, 52)
+theme_override_font_sizes/font_size = 22
+text = "退出游戏"
+
+[node name="Hint" type="Label" parent="Root"]
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -300
+offset_top = -70
+offset_right = 300
+offset_bottom = -44
+theme_override_colors/font_color = Color(0.4, 0.42, 0.48, 1)
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+text = "方向键/鼠标选择 · 回车确认 · WASD 移动 · L 开镜 · F 检视"
