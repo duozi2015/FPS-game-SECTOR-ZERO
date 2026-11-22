@@ -16,6 +16,8 @@ signal inspect_finished()
 @export var magazine_size := 30
 @export var max_range := 200.0
 @export var reload_time := 1.6  ## 自动换弹时长（秒）
+@export var pellets := 1  ## 每次扣扳机的弹丸数（霰弹枪=8）
+@export var pellet_damage := 12.0  ## 多弹丸时的单弹丸伤害
 
 @export_group("Spread Bloom")
 @export var spread_bloom_per_shot := 0.5  ## 每发增加的散布（度）
@@ -123,13 +125,24 @@ func try_fire() -> bool:
 	ammo_in_mag -= 1
 	current_bloom = minf(current_bloom + spread_bloom_per_shot, spread_bloom_max)
 	ammo_changed.emit(ammo_in_mag)
-	var info := _raycast(_apply_spread(_muzzle_dir()))
-	_apply_hit(info)
 	_spawn_muzzle_fx()
-	Tracer.spawn(get_tree().root, _muzzle.global_position, info["position"])
 	_shot_sound.play()
-	fired.emit(info)
+	# 多弹丸（霰弹枪）：每弹丸独立射线/命中/信号
+	for i in pellets:
+		var info := _raycast(_apply_spread(_muzzle_dir()))
+		if pellets > 1:
+			info["damage"] = pellet_damage
+		_apply_hit(info)
+		Tracer.spawn(get_tree().root, _muzzle.global_position, info["position"])
+		fired.emit(info)
 	return true
+
+
+## 补满弹匣（弹药拾取用），并取消进行中的换弹
+func refill() -> void:
+	_reloading = false
+	ammo_in_mag = magazine_size
+	ammo_changed.emit(ammo_in_mag)
 
 
 ## 空仓自动换弹（design.md §5：资源循环需要明确的弹药反馈）

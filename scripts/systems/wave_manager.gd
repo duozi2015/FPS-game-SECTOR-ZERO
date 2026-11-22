@@ -21,6 +21,7 @@ const MAX_ALIVE := 15
 
 ## 刷怪点（arena 里拖入 Marker3D）
 @export var spawn_points: Array[Node3D] = []
+@export var auto_start := true  ## 进入场景即开波（测试可关）
 
 var wave := 0
 var alive := 0
@@ -45,6 +46,19 @@ static func compose_wave(wave_num: int) -> Dictionary:
 		"shooter": shooters,
 		"brute": brutes,
 	}
+
+
+func _ready() -> void:
+	add_to_group("wave_manager")
+	if spawn_points.is_empty():
+		# 健壮自查：父场景下找 "Spawns" 容器，其子节点即刷怪点
+		var spawns := get_parent().get_node_or_null("Spawns")
+		if spawns:
+			for child in spawns.get_children():
+				if child is Node3D:
+					spawn_points.append(child as Node3D)
+	if auto_start:
+		start()
 
 
 func start() -> void:

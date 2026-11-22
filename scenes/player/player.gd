@@ -2,13 +2,20 @@ class_name Player
 extends CharacterBody3D
 
 ## 玩家控制器 —— 手感参数全部来自 MovementConfig（design.md §5-6）
-## 调手感优先改 movement_config.gd，不改这里
+## M2：双武器切枪（1/2）、血量死亡、重开
+
+signal active_weapon_changed(weapon: WeaponBase)
+signal player_died()
 
 @export var config: MovementConfig
 
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
-@onready var weapon: WeaponBase = $Head/Camera3D/Rifle
+@onready var damageable: Damageable = $Damageable
+
+var weapons: Array[WeaponBase] = []
+var weapon: WeaponBase  ## 当前激活武器
+var dead := false
 
 var _jump_buffer := 0.0
 var _coyote := 0.0
@@ -25,13 +32,39 @@ func _ready() -> void:
 	add_to_group("player")
 	if config == null:
 		config = MovementConfig.new()
-	weapon.shooter_body = self
-	weapon.fired.connect(_on_weapon_fired)
+	weapons = [
+		$Head/Camera3D/Rifle as WeaponBase,
+		$Head/Camera3D/Shotgun as WeaponBase,
+	]
+	for w in weapons:
+		w.shooter_body = self
+		w.fired.connect(_on_weapon_fired)
+		w.visible = false
+	weapon = weapons[0]
+	weapon.visible = true
 	# FPS 标准鼠标捕获：光标锁定屏幕中心，relative 才连续可靠
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	damageable.died.connect(_on_player_died)
+
+
+func _switch_weapon(index: int) -> void:
+	if index < 0 or index >= weapons.size() or weapons[index] == weapon:
+		return
+	weapon.visible = false
+	weapon = weapons[index]
+	weapon.visible = true
+	active_weapon_changed.emit(weapon)
+
+
+func _on_weapon_fired(_info: Dictionary) -> void:
+	_recoil_deg = minf(_recoil_deg + RECOIL_KICK_DEG, RECOIL_KICK_MAX)
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if dead:
+		if event.is_action_pressed("restart"):
+			get_tree().reload_current_scene()
+		return
 	if event.is_action_pressed("ui_cancel"):
 		# Esc 释放/捕获鼠标（释放后可点窗口控制）
 		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -45,6 +78,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("inspect"):
 		weapon.trigger_inspect()
 		return
+	if event.is_action_pressed("weapon_1"):
+		_switch_weapon(0)
+		return
+	if event.is_action_pressed("weapon_2"):
+		_switch_weapon(1)
+		return
 	if event is InputEventMouseMotion:
 		var motion := event as InputEventMouseMotion
 		# 开镜时灵敏度按 ads_sensitivity_scale 收缩
@@ -57,11 +96,26 @@ func _unhandled_input(event: InputEvent) -> void:
 		weapon.add_look_delta(motion.relative)
 
 
-func _on_weapon_fired(_info: Dictionary) -> void:
-	_recoil_deg = minf(_recoil_deg + RECOIL_KICK_DEG, RECOIL_KICK_MAX)
+func _on_player_died() -> void:
+	dead = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	get_tree().call_group("fx_camera_shake", "trigger", 0.8)
+	get_tree().call_group("wave_manager", "stop")  # 死亡冻结波次推进
+	var wave := 0
+	var wm := get_tree().get_first_node_in_group("wave_manager")
+	if wm:
+		wave = (wm as WaveManager).wave
+	get_tree().call_group("ui_hud", "show_game_over", wave)
 
 
 func _physics_process(delta: float) -> void:
+	if dead:
+		velocity.x = 0
+		velocity.z = 0
+		if not is_on_floor():
+			velocity.y -= get_gravity().length() * delta
+		move_and_slide()
+		return
 	# 射击输入（T7）；开镜为 L 切换式，在 _unhandled_input 处理
 	if Input.is_action_pressed("shoot"):
 		weapon.try_fire()
