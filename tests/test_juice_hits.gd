@@ -25,8 +25,20 @@ func test_hitmarker_flashes_on_hit() -> void:
 	var runner := scene_runner(RANGE_PATH)
 	await runner.simulate_frames(5)
 	var crosshair := runner.scene().get_node("CrosshairLayer/Control")
-	await _burst_fire(runner)
-	# 末次命中在释放后 67ms 内，闪光衰减 5/s → alpha 应仍 > 0
+	var player := runner.scene().get_node("Player") as CharacterBody3D
+	var hit_events := [0]
+	(player.weapon as WeaponBase).fired.connect(
+		func(info: Dictionary) -> void:
+			if info.get("damageable"):
+				hit_events[0] += 1)
+	# 事件驱动：命中即停 → 衰减几乎为零，alpha 必然 > 0
+	runner.simulate_action_press("shoot")
+	for i in 600:
+		await runner.simulate_frames(1)
+		if hit_events[0] >= 1:
+			break
+	runner.simulate_action_release("shoot")
+	assert_int(hit_events[0]).override_failure_message("未命中").is_greater(0)
 	assert_float(crosshair._hit_alpha).override_failure_message(
 		"hitmarker 未闪").is_greater(0.0)
 

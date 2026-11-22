@@ -30,4 +30,4 @@ func test_shooting_dummy_applies_damage_and_kills() -> void:
 	runner.simulate_action_release("shoot")
 	assert_int(hit_count[0]).override_failure_message("命中次数不足").is_greater_equal(4)
 	assert_int(deaths[0]).override_failure_message("木桩未死亡").is_equal(1)
-	assert_float(dmg.health).is_equal(0.0)
+	# 死亡后 dummy 与 Damageable 均被释放，不再读 health（died 信号即证）

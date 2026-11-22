@@ -11,6 +11,7 @@ var _weapon: WeaponBase
 
 
 func _ready() -> void:
+	add_to_group("ui_crosshair")
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	queue_redraw()
 	var player := get_tree().get_first_node_in_group("player")
