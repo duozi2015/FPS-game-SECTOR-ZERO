@@ -19,23 +19,26 @@ func test_ads_zooms_fov_and_restores() -> void:
 	var runner: GdUnitSceneRunner = out[0]
 	var weapon: WeaponBase = out[2]
 	var cam: Camera3D = out[3]
-	runner.simulate_action_press("aim")
+	runner.simulate_action_press("aim")  # 切换式：第 1 次按下 = 开镜
 	var deadline := Time.get_ticks_msec() + 5000
 	while Time.get_ticks_msec() < deadline and weapon.ads_blend < 0.8:
 		await runner.simulate_frames(1)
 	assert_float(weapon.ads_blend).override_failure_message("开镜未完成").is_greater(0.8)
 	assert_float(cam.fov).override_failure_message(
 		"开镜 FOV 未收缩: %.1f" % cam.fov).is_less(80.0)
-	runner.simulate_action_release("aim")
+	runner.simulate_action_release("aim")  # 松开不改变状态
+	runner.simulate_action_press("aim")  # 第 2 次按下 = 关镜
 	deadline = Time.get_ticks_msec() + 5000
 	while Time.get_ticks_msec() < deadline and weapon.ads_blend > 0.2:
 		await runner.simulate_frames(1)
-	assert_float(weapon.ads_blend).is_less(0.2)
+	assert_float(weapon.ads_blend).override_failure_message(
+		"再按一下未关镜").is_less(0.2)
 	# FOV 以 8/s 速率回升，需继续等它真正回到基础值
 	deadline = Time.get_ticks_msec() + 5000
 	while Time.get_ticks_msec() < deadline and cam.fov < 87.0:
 		await runner.simulate_frames(1)
 	assert_float(cam.fov).override_failure_message("FOV 未恢复").is_greater(87.0)
+	runner.simulate_action_release("aim")
 
 
 func test_ads_reduces_spread_and_speed() -> void:
@@ -43,7 +46,7 @@ func test_ads_reduces_spread_and_speed() -> void:
 	var runner: GdUnitSceneRunner = out[0]
 	var player := out[1] as CharacterBody3D
 	var weapon: WeaponBase = out[2]
-	runner.simulate_action_press("aim")
+	runner.simulate_action_press("aim")  # 开镜
 	runner.simulate_action_press("move_forward")
 	var deadline := Time.get_ticks_msec() + 5000
 	while Time.get_ticks_msec() < deadline and weapon.ads_blend < 1.0:
@@ -53,6 +56,7 @@ func test_ads_reduces_spread_and_speed() -> void:
 		"开镜散布未收缩").is_less(0.4)
 	assert_float(player.velocity.length()).override_failure_message(
 		"开镜移速未收缩: %.1f" % player.velocity.length()).is_less(5.5)
+	runner.simulate_action_press("aim")  # 关镜
 	runner.simulate_action_release("aim")
 	runner.simulate_action_release("move_forward")
 

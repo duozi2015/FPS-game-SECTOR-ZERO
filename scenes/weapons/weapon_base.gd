@@ -76,6 +76,13 @@ func set_aiming(enabled: bool) -> void:
 	aiming = enabled and not _inspecting  ## 检视期间禁止开镜
 
 
+## 切换式开镜（触控板友好）：按一下开、再按一下关
+func toggle_aim() -> void:
+	if _inspecting:
+		return
+	set_aiming(not aiming)
+
+
 ## 开镜散布系数（准星/命中共用）
 func effective_spread_multiplier() -> float:
 	return lerpf(1.0, ads_spread_multiplier, ads_blend)

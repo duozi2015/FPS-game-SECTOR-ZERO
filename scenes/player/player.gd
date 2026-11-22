@@ -39,6 +39,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		return
+	if event.is_action_pressed("aim"):
+		weapon.toggle_aim()  # 切换式开镜（触控板友好）
+		return
 	if event.is_action_pressed("inspect"):
 		weapon.trigger_inspect()
 		return
@@ -59,8 +62,7 @@ func _on_weapon_fired(_info: Dictionary) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	# 射击 / 开镜输入（T7 / M1.6）
-	weapon.set_aiming(Input.is_action_pressed("aim"))
+	# 射击输入（T7）；开镜为 L 切换式，在 _unhandled_input 处理
 	if Input.is_action_pressed("shoot"):
 		weapon.try_fire()
 
