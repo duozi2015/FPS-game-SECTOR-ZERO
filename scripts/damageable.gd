@@ -22,12 +22,20 @@ func apply_damage(info: Dictionary) -> void:
 		return
 	var amount: float = info.get("damage", 0.0)
 	health = maxf(health - amount, 0.0)
-	# 规范化载荷：FX 消费统一键名
+	# 规范化载荷：FX 消费统一键名（击退供敌人/玩家物理响应）
 	damaged.emit({
 		"amount": amount,
 		"position": info.get("position", Vector3.ZERO),
 		"normal": info.get("normal", Vector3.ZERO),
+		"knockback": info.get("knockback", 0.0),
 	})
 	if health <= 0.0:
 		is_dead = true
 		died.emit()
+
+
+## 治疗（拾取回血用）：不溢出、死亡无效
+func heal(amount: float) -> void:
+	if is_dead:
+		return
+	health = minf(health + amount, max_health)
