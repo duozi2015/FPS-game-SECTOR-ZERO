@@ -1,30 +1,45 @@
 extends StaticBody3D
 
-## 靶场木桩：受击 → 伤害数字 + 命中音；击杀 → hit-stop + 碎片弹飞 + 震动（T12）
+## 靶场木桩：受击 → 伤害数字 + 命中音 + 发光脉冲；击杀 → hit-stop + 碎片 + 连击上报
 
 const DEBRIS_COUNT := 5
 const KILL_SOUND := preload("res://assets/audio/kill.wav")
 const DEBRIS_MESH_COLOR := Color(0.55, 0.5, 0.45)
+const TARGET_TEXTURE := preload("res://assets/textures/target_face.png")
 
 @onready var _damageable: Damageable = $Damageable
 @onready var _hit_sound: AudioStreamPlayer3D = $HitSound
+@onready var _mesh: MeshInstance3D = $MeshInstance3D
+
+var _flash_mat: StandardMaterial3D
 
 
 func _ready() -> void:
 	_damageable.damaged.connect(_on_damaged)
 	_damageable.died.connect(_on_died)
+	# 受击闪光材质：常驻 override，靠 emission 能量脉冲
+	_flash_mat = StandardMaterial3D.new()
+	_flash_mat.albedo_texture = TARGET_TEXTURE
+	_flash_mat.emission_enabled = true
+	_flash_mat.emission = Color(1.0, 0.6, 0.25)
+	_flash_mat.emission_energy_multiplier = 0.0
+	_mesh.material_override = _flash_mat
 
 
 func _on_damaged(info: Dictionary) -> void:
 	# 挂到父节点（竞技场根）：木桩死后数字仍可存活
 	DamageNumber.spawn(get_parent(), info["position"], info["amount"])
 	_hit_sound.play()
+	_flash_mat.emission_energy_multiplier = 2.2
+	var t := create_tween()
+	t.tween_property(_flash_mat, "emission_energy_multiplier", 0.0, 0.15)
 
 
 func _on_died() -> void:
 	HitStop.trigger(0.06)
 	get_tree().call_group("fx_camera_shake", "trigger", 0.4)
 	get_tree().call_group("ui_crosshair", "flash_kill")
+	get_tree().call_group("combo_system", "notify_kill")
 	var container := Node3D.new()
 	get_parent().add_child(container)
 	container.global_position = global_position + Vector3(0, 1.0, 0)

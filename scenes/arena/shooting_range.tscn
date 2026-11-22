@@ -1,8 +1,13 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=26 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/dummy.tscn" id="2_dummy"]
 [ext_resource type="PackedScene" path="res://scenes/ui/crosshair.tscn" id="3_crosshair"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="4_hud"]
+[ext_resource type="Script" path="res://scripts/systems/combo.gd" id="5_combo"]
+[ext_resource type="Texture2D" path="res://assets/textures/floor_grid.png" id="6_tex_floor"]
+[ext_resource type="Texture2D" path="res://assets/textures/wall_panel.png" id="7_tex_wall"]
+[ext_resource type="Texture2D" path="res://assets/textures/crate_metal.png" id="8_tex_crate"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
 size = Vector3(40, 1, 40)
@@ -10,20 +15,99 @@ size = Vector3(40, 1, 40)
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
 size = Vector3(40, 1, 40)
 
-[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial_1"]
+[sub_resource type="StandardMaterial3D" id="Mat_floor"]
+albedo_texture = ExtResource("6_tex_floor")
+uv1_triplanar = true
+uv1_scale = Vector3(8, 8, 8)
+roughness = 0.95
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
+size = Vector3(40, 6, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall"]
+size = Vector3(40, 6, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_wall"]
+albedo_texture = ExtResource("7_tex_wall")
+uv1_triplanar = true
+uv1_scale = Vector3(5, 5, 5)
+roughness = 0.9
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_side"]
+size = Vector3(1, 6, 40)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_side"]
+size = Vector3(1, 6, 40)
+
+[sub_resource type="StandardMaterial3D" id="Mat_crate"]
+albedo_texture = ExtResource("8_tex_crate")
+roughness = 0.85
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_crate"]
+size = Vector3(1.5, 1.5, 1.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_crate"]
+size = Vector3(1.5, 1.5, 1.5)
+
+[sub_resource type="StandardMaterial3D" id="Mat_neon_orange"]
+albedo_color = Color(0.1, 0.08, 0.05, 1)
+emission_enabled = true
+emission = Color(1, 0.55, 0.2, 1)
+emission_energy_multiplier = 2.5
+
+[sub_resource type="StandardMaterial3D" id="Mat_neon_cyan"]
+albedo_color = Color(0.03, 0.08, 0.09, 1)
+emission_enabled = true
+emission = Color(0.25, 0.85, 0.95, 1)
+emission_energy_multiplier = 2.2
+
+[sub_resource type="BoxMesh" id="BoxMesh_neon"]
+size = Vector3(16, 0.12, 0.12)
+
+[sub_resource type="ProceduralSkyMaterial" id="SkyMat_dark"]
+sky_top_color = Color(0.03, 0.04, 0.07, 1)
+sky_horizon_color = Color(0.07, 0.08, 0.11, 1)
+ground_bottom_color = Color(0.02, 0.02, 0.03, 1)
+ground_horizon_color = Color(0.07, 0.08, 0.11, 1)
 
 [sub_resource type="Sky" id="Sky_1"]
-sky_material = SubResource("SkyMaterial_1")
+sky_material = SubResource("SkyMat_dark")
 
-[sub_resource type="Environment" id="Environment_1"]
+[sub_resource type="Environment" id="Env_1"]
 background_mode = 2
 sky = SubResource("Sky_1")
+ambient_light_source = 3
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.7
+glow_bloom = 0.05
+fog_enabled = true
+fog_light_color = Color(0.08, 0.1, 0.14, 1)
+fog_density = 0.012
+fog_sky_affect = 0.15
 
 [node name="ShootingRange" type="Node3D"]
 
-[node name="Player" parent="." instance=ExtResource("1_player")]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env_1")
 
-[node name="CrosshairLayer" parent="." instance=ExtResource("3_crosshair")]
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.707, 0.707, 0, -0.707, 0.707, 0, 10, 0)
+light_color = Color(0.75, 0.82, 1, 1)
+light_energy = 0.4
+
+[node name="KeyLightOrange" type="PointLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -8)
+light_color = Color(1, 0.6, 0.3, 1)
+light_energy = 2.5
+shadow_enabled = true
+omni_range = 12.0
+
+[node name="FillLightCyan" type="PointLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 4)
+light_color = Color(0.3, 0.8, 1, 1)
+light_energy = 1.5
+omni_range = 10.0
 
 [node name="Floor" type="StaticBody3D" parent="."]
 
@@ -34,6 +118,97 @@ shape = SubResource("BoxShape3D_floor")
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Floor"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 mesh = SubResource("BoxMesh_floor")
+surface_material_override/0 = SubResource("Mat_floor")
+
+[node name="WallN" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, -20.5)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WallN"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="WallN"]
+mesh = SubResource("BoxMesh_wall")
+surface_material_override/0 = SubResource("Mat_wall")
+
+[node name="WallS" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 20.5)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WallS"]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="WallS"]
+mesh = SubResource("BoxMesh_wall")
+surface_material_override/0 = SubResource("Mat_wall")
+
+[node name="WallE" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20.5, 3, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WallE"]
+shape = SubResource("BoxShape3D_wall_side")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="WallE"]
+mesh = SubResource("BoxMesh_wall_side")
+surface_material_override/0 = SubResource("Mat_wall")
+
+[node name="WallW" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.5, 3, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WallW"]
+shape = SubResource("BoxShape3D_wall_side")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="WallW"]
+mesh = SubResource("BoxMesh_wall_side")
+surface_material_override/0 = SubResource("Mat_wall")
+
+[node name="NeonN" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, -19.8)
+mesh = SubResource("BoxMesh_neon")
+surface_material_override/0 = SubResource("Mat_neon_orange")
+
+[node name="NeonS" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, 19.8)
+mesh = SubResource("BoxMesh_neon")
+surface_material_override/0 = SubResource("Mat_neon_cyan")
+
+[node name="NeonE" type="MeshInstance3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 19.8, 3.2, 0)
+mesh = SubResource("BoxMesh_neon")
+surface_material_override/0 = SubResource("Mat_neon_cyan")
+
+[node name="NeonW" type="MeshInstance3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -19.8, 3.2, 0)
+mesh = SubResource("BoxMesh_neon")
+surface_material_override/0 = SubResource("Mat_neon_orange")
+
+[node name="Crate1" type="StaticBody3D" parent="."]
+transform = Transform3D(0.966, 0, 0.259, 0, 1, 0, -0.259, 0, 0.966, 6, 0.75, -14)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Crate1"]
+shape = SubResource("BoxShape3D_crate")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Crate1"]
+mesh = SubResource("BoxMesh_crate")
+surface_material_override/0 = SubResource("Mat_crate")
+
+[node name="Crate2" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.75, -12)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Crate2"]
+shape = SubResource("BoxShape3D_crate")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Crate2"]
+mesh = SubResource("BoxMesh_crate")
+surface_material_override/0 = SubResource("Mat_crate")
+
+[node name="Crate3" type="StaticBody3D" parent="."]
+transform = Transform3D(0.866, 0, 0.5, 0, 1, 0, -0.5, 0, 0.866, 10, 0.75, -5)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Crate3"]
+shape = SubResource("BoxShape3D_crate")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Crate3"]
+mesh = SubResource("BoxMesh_crate")
+surface_material_override/0 = SubResource("Mat_crate")
 
 [node name="Dummy1" parent="." instance=ExtResource("2_dummy")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0, -8)
@@ -44,8 +219,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -8)
 [node name="Dummy3" parent="." instance=ExtResource("2_dummy")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, -8)
 
-[node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.9, 0.43, 0, -0.43, 0.9, 0, 10, 0)
+[node name="Player" parent="." instance=ExtResource("1_player")]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_1")
+[node name="ComboSystem" type="Node" parent="."]
+script = ExtResource("5_combo")
+
+[node name="CrosshairLayer" parent="." instance=ExtResource("3_crosshair")]
+
+[node name="HUD" parent="." instance=ExtResource("4_hud")]

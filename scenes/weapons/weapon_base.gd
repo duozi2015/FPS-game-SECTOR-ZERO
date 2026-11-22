@@ -6,12 +6,15 @@ extends Node3D
 ## 子类（霰弹枪等）只覆写 _apply_spread / _raycast 或调参数
 
 signal fired(info: Dictionary)
+signal ammo_changed(current: int)
+signal reloaded()
 
 @export var damage := 25.0
 @export var fire_rate_rpm := 900.0
 @export var spread_degrees := 1.0
 @export var magazine_size := 30
 @export var max_range := 200.0
+@export var reload_time := 1.6  ## 自动换弹时长（秒）
 
 @export_group("Spread Bloom")
 @export var spread_bloom_per_shot := 0.5  ## 每发增加的散布（度）
@@ -25,8 +28,11 @@ var ammo_in_mag := 0
 var current_bloom := 0.0  ## 当前累计散布增量（度），准星联动读它
 
 var _cooldown := 0.0
+var _reloading := false
 
 @onready var _shot_sound: AudioStreamPlayer3D = $ShotSound
+@onready var _empty_sound: AudioStreamPlayer3D = $EmptySound
+@onready var _reload_sound: AudioStreamPlayer3D = $ReloadSound
 @onready var _muzzle: Marker3D = $Muzzle
 
 
@@ -40,11 +46,15 @@ func _physics_process(delta: float) -> void:
 
 
 func try_fire() -> bool:
-	if _cooldown > 0.0 or ammo_in_mag <= 0:
+	if _cooldown > 0.0:
+		return false
+	if ammo_in_mag <= 0:
+		_start_reload()
 		return false
 	_cooldown = 60.0 / fire_rate_rpm
 	ammo_in_mag -= 1
 	current_bloom = minf(current_bloom + spread_bloom_per_shot, spread_bloom_max)
+	ammo_changed.emit(ammo_in_mag)
 	var info := _raycast(_apply_spread(_muzzle_dir()))
 	_apply_hit(info)
 	_spawn_muzzle_fx()
@@ -52,6 +62,22 @@ func try_fire() -> bool:
 	_shot_sound.play()
 	fired.emit(info)
 	return true
+
+
+## 空仓自动换弹（design.md §5：资源循环需要明确的弹药反馈）
+func _start_reload() -> void:
+	if _reloading:
+		return
+	_reloading = true
+	_empty_sound.play()
+	var t := create_tween()
+	t.tween_interval(reload_time)
+	t.tween_callback(func() -> void:
+		_reloading = false
+		ammo_in_mag = magazine_size
+		ammo_changed.emit(ammo_in_mag)
+		_reload_sound.play()
+		reloaded.emit())
 
 
 ## 命中结算：collider 自身可受击，或其子节点挂 Damageable
