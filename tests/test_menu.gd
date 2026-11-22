@@ -9,7 +9,13 @@ func test_menu_loads_with_buttons() -> void:
 	var runner := scene_runner(MENU)
 	await runner.simulate_frames(3)
 	var root := runner.scene()
-	assert_object(root.get_node("Root/Buttons/BtnArena")).is_not_null()
+	# 回归守卫：菜单脚本曾漏挂到节点导致按钮全死（与 HUD 同类失误）
+	var script: Script = root.get_script()
+	assert_object(script).override_failure_message(
+		"menu.gd 未挂载到 Menu 节点").is_not_null()
+	var btn := root.get_node("Root/Buttons/BtnArena") as Button
+	assert_int(btn.pressed.get_connections().size()).override_failure_message(
+		"开始按钮未接线").is_greater(0)
 	assert_object(root.get_node("Root/Buttons/BtnCity")).is_not_null()
 	assert_object(root.get_node("Root/Buttons/BtnQuit")).is_not_null()
 
