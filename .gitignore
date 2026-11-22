@@ -1,0 +1,10 @@
+# Godot
+.godot/
+*.tmp
+
+# System
+.DS_Store
+
+# gdUnit4 runtime artifacts
+addons/gdUnit4/.gdunit3_previous_run.json
+reports/
