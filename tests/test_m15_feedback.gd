@@ -68,10 +68,14 @@ func test_empty_mag_auto_reloads() -> void:
 	weapon.reload_time = 0.3
 	weapon.ammo_in_mag = 1
 	runner.simulate_action_press("shoot")
-	for i in 1000:  # 0.3s 真实时间 + 充足余量
+	# 真实时钟 deadline：time_scale 异常或帧耗时波动都不会饿死等待
+	var deadline := Time.get_ticks_msec() + 10000
+	while Time.get_ticks_msec() < deadline and not reloaded[0]:
 		await runner.simulate_frames(1)
-		if reloaded[0]:
-			break
+	runner.simulate_action_release("shoot")
+	assert_bool(reloaded[0]).override_failure_message(
+		"未自动换弹 (time_scale=%.2f reloading=%s shots_fired_observed)" % [
+			Engine.time_scale, str(weapon._reloading)]).is_true()
 	runner.simulate_action_release("shoot")
 	assert_bool(reloaded[0]).override_failure_message(
 		"未自动换弹 (frames=%d)" % 700).is_true()
