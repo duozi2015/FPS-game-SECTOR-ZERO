@@ -106,11 +106,11 @@ func _spawn_one() -> void:
 	pending -= 1
 	var scene: PackedScene = load(enemy_scene_paths.get(type, enemy_scene_paths["grunt"]))
 	var enemy := scene.instantiate()
-	# 轮询刷怪点 + 少量随机偏移，避免同点堆叠
+	get_parent().add_child(enemy)
+	# 轮询刷怪点 + 少量随机偏移，避免同点堆叠（必须入树后再设 global_position）
 	var point := spawn_points[wave % spawn_points.size()]
 	enemy.global_position = point.global_position + Vector3(
 		randf_range(-1.5, 1.5), 0, randf_range(-1.5, 1.5))
-	get_parent().add_child(enemy)
 	alive += 1
 	var dmg: Damageable = enemy.get_node_or_null("Damageable")
 	if dmg:

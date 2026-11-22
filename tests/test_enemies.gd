@@ -41,14 +41,18 @@ func test_grunt_chases_and_damages_player() -> void:
 	grunt.queue_free()
 
 
-func test_shooter_projectile_hits_player() -> void:
+func test_shooter_hitscan_hits_player_and_is_nerfed() -> void:
 	var runner := scene_runner(STAGE)
 	await runner.simulate_frames(5)
 	var player := runner.scene().get_node("Player") as CharacterBody3D
 	var shooter := _spawn(runner, SHOOTER, player.global_position + Vector3(0, 0, -8))
 	var reached := await _await_player_hp_below(runner, 100.0, 10000)
 	assert_bool(reached).override_failure_message(
-		"Shooter 弹道未能命中玩家").is_true()
+		"Shooter 削版步枪未能命中玩家").is_true()
+	# 大削验证：单发 4 伤，命中后血量应远高于 88（老投射物是 15 伤）
+	var dmg := _player_hp(runner)
+	assert_float(dmg.health).override_failure_message(
+		"削版伤害过高: %.0f" % dmg.health).is_greater(88.0)
 	shooter.queue_free()
 
 
