@@ -34,8 +34,24 @@ func try_fire() -> bool:
 		return false
 	_cooldown = 60.0 / fire_rate_rpm
 	ammo_in_mag -= 1
-	fired.emit(_raycast(_apply_spread(_muzzle_dir())))
+	var info := _raycast(_apply_spread(_muzzle_dir()))
+	_apply_hit(info)
+	fired.emit(info)
 	return true
+
+
+## 命中结算：collider 自身可受击，或其子节点挂 Damageable
+func _apply_hit(info: Dictionary) -> void:
+	var collider: Object = info["collider"]
+	if collider is not Node:
+		return
+	var body := collider as Node
+	if body.has_method("apply_damage"):
+		body.apply_damage(info)
+		return
+	for child in body.find_children("*", "Damageable", false, false):
+		child.apply_damage(info)
+		return
 
 
 func _muzzle_dir() -> Vector3:
