@@ -51,3 +51,41 @@ func test_mouse_look_rotates_player() -> void:
 	await runner.simulate_frames(5)
 	await runner.simulate_mouse_move_relative(Vector2(200, 0))
 	assert_float(absf(player.rotation.y)).is_greater(0.0)
+
+
+func test_sprint_stretches_fov() -> void:
+	var runner := scene_runner(STAGE_PATH)
+	var player := _player(runner)
+	var cam := player.get_node("Head/Camera3D") as Camera3D
+	await runner.simulate_frames(5)
+	runner.simulate_action_press("move_forward")
+	runner.simulate_action_press("sprint")
+	await runner.simulate_frames(60)
+	runner.simulate_action_release("sprint")
+	runner.simulate_action_release("move_forward")
+	assert_float(cam.fov).is_greater(90.5)  # 从 90 向 98 拉伸中
+
+
+func test_landing_dip_occurs_and_recovers() -> void:
+	var runner := scene_runner(STAGE_PATH)
+	var player := _player(runner)
+	var cam := player.get_node("Head/Camera3D") as Camera3D
+	await runner.simulate_frames(10)
+	runner.simulate_action_press("jump")
+	# headless 下 idle 帧与物理 tick 不同步：全程采样 + 落地事件触发，
+	# 不假设跳跃周期时长
+	var went_airborne := false
+	var min_tilt := 0.0
+	for i in 400:
+		await runner.simulate_frames(1)
+		if not player.is_on_floor():
+			went_airborne = true
+		min_tilt = minf(min_tilt, cam.rotation.x)
+		if went_airborne and player.is_on_floor():
+			for j in 30:  # 落地后再采样一段，覆盖 dip 及回弹
+				await runner.simulate_frames(1)
+				min_tilt = minf(min_tilt, cam.rotation.x)
+			break
+	runner.simulate_action_release("jump")
+	assert_bool(went_airborne).override_failure_message("从未离地").is_true()
+	assert_float(min_tilt).override_failure_message("未出现向下 dip").is_less(0.0)

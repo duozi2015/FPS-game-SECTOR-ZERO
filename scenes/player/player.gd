@@ -12,6 +12,7 @@ extends CharacterBody3D
 var _jump_buffer := 0.0
 var _coyote := 0.0
 var _pitch := 0.0
+var _landing_dip := 0.0  ## 落地镜头下压角（度），自动回弹
 
 
 func _ready() -> void:
@@ -63,4 +64,16 @@ func _physics_process(delta: float) -> void:
 		_jump_buffer = 0.0
 		_coyote = 0.0
 
+	var was_on_floor := is_on_floor()
+	var fall_speed := velocity.y
 	move_and_slide()
+
+	# 落地 dip：从空中落到地面的瞬间，镜头下压后回弹
+	if not was_on_floor and is_on_floor() and fall_speed < -3.0:
+		_landing_dip = config.landing_dip_degrees
+	_landing_dip = lerpf(_landing_dip, 0.0, minf(10.0 * delta, 1.0))
+	camera.rotation.x = deg_to_rad(-_landing_dip)
+
+	# FOV 拉伸：速度感（design.md §6）
+	var target_fov := config.sprint_fov if sprinting else config.base_fov
+	camera.fov = lerpf(camera.fov, target_fov, minf(8.0 * delta, 1.0))
