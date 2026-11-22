@@ -35,3 +35,16 @@ func test_fov_delta_is_positive() -> void:
 
 func test_mouse_sensitivity_nonzero() -> void:
 	assert_float(_cfg().mouse_sensitivity).is_greater(0.0)
+
+
+func test_ads_params() -> void:
+	## M1.6：开镜三参数锁定（design.md plan.md T15a）
+	assert_float(_cfg().ads_fov).is_equal(55.0)
+	assert_float(_cfg().ads_move_multiplier).is_equal(0.6)
+	assert_float(_cfg().ads_sensitivity_scale).is_equal(0.5)
+
+
+func test_ads_actions_registered() -> void:
+	## aim(RMB) / inspect(F) 输入映射
+	assert_bool(InputMap.has_action("aim")).is_true()
+	assert_bool(InputMap.has_action("inspect")).is_true()

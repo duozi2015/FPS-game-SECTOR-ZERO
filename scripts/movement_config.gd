@@ -18,3 +18,8 @@ extends Resource
 @export var sprint_fov := 98.0
 @export var mouse_sensitivity := 0.002
 @export var landing_dip_degrees := 5.0
+
+@export_group("ADS")
+@export var ads_fov := 55.0  ## 开镜视野（design.md M1.6）
+@export var ads_move_multiplier := 0.6  ## 开镜移速系数
+@export var ads_sensitivity_scale := 0.5  ## 开镜灵敏度系数

@@ -39,12 +39,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		else:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		return
+	if event.is_action_pressed("inspect"):
+		weapon.trigger_inspect()
+		return
 	if event is InputEventMouseMotion:
 		var motion := event as InputEventMouseMotion
-		rotate_y(-motion.relative.x * config.mouse_sensitivity)
+		# 开镜时灵敏度按 ads_sensitivity_scale 收缩
+		var sens := config.mouse_sensitivity * lerpf(
+			1.0, config.ads_sensitivity_scale, weapon.ads_blend)
+		rotate_y(-motion.relative.x * sens)
 		_pitch = clampf(
-			_pitch - motion.relative.y * config.mouse_sensitivity,
+			_pitch - motion.relative.y * sens,
 			-deg_to_rad(89.0), deg_to_rad(89.0))
+		weapon.add_look_delta(motion.relative)
 
 
 func _on_weapon_fired(_info: Dictionary) -> void:
@@ -52,13 +59,16 @@ func _on_weapon_fired(_info: Dictionary) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	# 射击输入（T7）
+	# 射击 / 开镜输入（T7 / M1.6）
+	weapon.set_aiming(Input.is_action_pressed("aim"))
 	if Input.is_action_pressed("shoot"):
 		weapon.try_fire()
 
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var sprinting := Input.is_action_pressed("sprint") and input.length_squared() > 0.0
 	var speed := config.sprint_speed if sprinting else config.walk_speed
+	# 开镜移速收缩（M1.6）
+	speed *= lerpf(1.0, config.ads_move_multiplier, weapon.ads_blend)
 
 	var direction := (transform.basis * Vector3(input.x, 0.0, input.y)).normalized()
 	if direction != Vector3.ZERO:
@@ -103,6 +113,7 @@ func _physics_process(delta: float) -> void:
 	_landing_dip = lerpf(_landing_dip, 0.0, minf(10.0 * delta, 1.0))
 	camera.rotation.x = deg_to_rad(-_landing_dip)
 
-	# FOV 拉伸：速度感（design.md §6）
+	# FOV：速度拉伸 + 开镜缩放（design.md §6 / M1.6）
 	var target_fov := config.sprint_fov if sprinting else config.base_fov
+	target_fov = lerpf(target_fov, config.ads_fov, weapon.ads_blend)
 	camera.fov = lerpf(camera.fov, target_fov, minf(8.0 * delta, 1.0))
