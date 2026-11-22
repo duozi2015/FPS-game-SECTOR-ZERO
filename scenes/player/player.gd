@@ -14,6 +14,11 @@ var _jump_buffer := 0.0
 var _coyote := 0.0
 var _pitch := 0.0
 var _landing_dip := 0.0  ## 落地镜头下压角（度），自动回弹
+var _recoil_deg := 0.0  ## 开火视觉上抬（度），自动回落
+
+const RECOIL_KICK_DEG := 1.2  ## 每发上抬
+const RECOIL_KICK_MAX := 3.0
+const RECOIL_RECOVER_SPEED := 14.0  ## 度/秒回落
 
 
 func _ready() -> void:
@@ -21,6 +26,11 @@ func _ready() -> void:
 	if config == null:
 		config = MovementConfig.new()
 	weapon.shooter_body = self
+	weapon.fired.connect(_on_weapon_fired)
+
+
+func _on_weapon_fired(_info: Dictionary) -> void:
+	_recoil_deg = minf(_recoil_deg + RECOIL_KICK_DEG, RECOIL_KICK_MAX)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -30,7 +40,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		_pitch = clampf(
 			_pitch - motion.relative.y * config.mouse_sensitivity,
 			-deg_to_rad(89.0), deg_to_rad(89.0))
-		head.rotation.x = _pitch
 
 
 func _physics_process(delta: float) -> void:
@@ -70,6 +79,10 @@ func _physics_process(delta: float) -> void:
 		velocity.y = config.jump_velocity
 		_jump_buffer = 0.0
 		_coyote = 0.0
+
+	# 视角统一写入：基础俯仰 + 开火后坐上抬（rotation.x 负 = 抬头）
+	_recoil_deg = maxf(_recoil_deg - RECOIL_RECOVER_SPEED * delta, 0.0)
+	head.rotation.x = _pitch - deg_to_rad(_recoil_deg)
 
 	var was_on_floor := is_on_floor()
 	var fall_speed := velocity.y

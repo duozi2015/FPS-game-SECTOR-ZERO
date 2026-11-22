@@ -5,7 +5,9 @@ extends Control
 
 var _hit_alpha := 0.0
 var _kill_alpha := 0.0
-var _spread_px := 6.0  ## 准星间隙，T11 与武器散布 bloom 联动
+var _spread_px := 6.0  ## 准星间隙，随武器散布 bloom 联动（design.md §5）
+
+var _weapon: WeaponBase
 
 
 func _ready() -> void:
@@ -13,7 +15,8 @@ func _ready() -> void:
 	queue_redraw()
 	var player := get_tree().get_first_node_in_group("player")
 	if player and "weapon" in player:
-		(player.weapon as WeaponBase).fired.connect(_on_weapon_fired)
+		_weapon = player.weapon as WeaponBase
+		_weapon.fired.connect(_on_weapon_fired)
 
 
 func flash_hit() -> void:
@@ -30,11 +33,12 @@ func _on_weapon_fired(info: Dictionary) -> void:
 
 
 func _process(delta: float) -> void:
-	var active := _hit_alpha + _kill_alpha
+	# 散布 bloom → 准星间隙实时联动
+	if _weapon:
+		_spread_px = 6.0 + _weapon.current_bloom * 3.0
 	_hit_alpha = maxf(_hit_alpha - delta * 5.0, 0.0)
 	_kill_alpha = maxf(_kill_alpha - delta * 3.0, 0.0)
-	if active > 0.0:
-		queue_redraw()
+	queue_redraw()
 
 
 func _draw() -> void:
