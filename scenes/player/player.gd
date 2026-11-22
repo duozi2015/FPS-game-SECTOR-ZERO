@@ -27,19 +27,28 @@ func _ready() -> void:
 		config = MovementConfig.new()
 	weapon.shooter_body = self
 	weapon.fired.connect(_on_weapon_fired)
-
-
-func _on_weapon_fired(_info: Dictionary) -> void:
-	_recoil_deg = minf(_recoil_deg + RECOIL_KICK_DEG, RECOIL_KICK_MAX)
+	# FPS 标准鼠标捕获：光标锁定屏幕中心，relative 才连续可靠
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		# Esc 释放/捕获鼠标（释放后可点窗口控制）
+		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		else:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		return
 	if event is InputEventMouseMotion:
 		var motion := event as InputEventMouseMotion
 		rotate_y(-motion.relative.x * config.mouse_sensitivity)
 		_pitch = clampf(
 			_pitch - motion.relative.y * config.mouse_sensitivity,
 			-deg_to_rad(89.0), deg_to_rad(89.0))
+
+
+func _on_weapon_fired(_info: Dictionary) -> void:
+	_recoil_deg = minf(_recoil_deg + RECOIL_KICK_DEG, RECOIL_KICK_MAX)
 
 
 func _physics_process(delta: float) -> void:

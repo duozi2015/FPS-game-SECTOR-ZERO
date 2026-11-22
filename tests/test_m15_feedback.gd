@@ -64,22 +64,46 @@ func test_empty_mag_auto_reloads() -> void:
 	var weapon: WeaponBase = out[2]
 	var reloaded := [false]
 	weapon.reloaded.connect(func() -> void: reloaded[0] = true)
-	# 只留 1 发：打空立刻触发 reload 流程；缩短 reload_time 让窗口确定性
+	# 只留 1 发；缩短 reload_time 让窗口确定
 	weapon.reload_time = 0.3
 	weapon.ammo_in_mag = 1
 	runner.simulate_action_press("shoot")
-	# 真实时钟 deadline：time_scale 异常或帧耗时波动都不会饿死等待
+	# 1) 打出最后一发（ammo_changed 第 2 次事件 = ammo 0）
+	var shots := [0]
+	weapon.ammo_changed.connect(func(_c: int) -> void: shots[0] += 1)
+	for i in 600:
+		await runner.simulate_frames(1)
+		if shots[0] >= 1:
+			break
+	# 2) 保持按住直到 reload 流程启动（try_fire 空仓触发）
+	for i in 600:
+		await runner.simulate_frames(1)
+		if weapon._reloading:
+			break
+	# 3) 换弹期间松开射击 → 换弹完成后不会立即多打一发
+	runner.simulate_action_release("shoot")
+	# 4) 等换弹完成（真实时钟 deadline，防帧耗时波动饿死）
 	var deadline := Time.get_ticks_msec() + 10000
 	while Time.get_ticks_msec() < deadline and not reloaded[0]:
 		await runner.simulate_frames(1)
-	runner.simulate_action_release("shoot")
 	assert_bool(reloaded[0]).override_failure_message(
-		"未自动换弹 (time_scale=%.2f reloading=%s shots_fired_observed)" % [
+		"未自动换弹 (time_scale=%.2f reloading=%s)" % [
 			Engine.time_scale, str(weapon._reloading)]).is_true()
-	runner.simulate_action_release("shoot")
-	assert_bool(reloaded[0]).override_failure_message(
-		"未自动换弹 (frames=%d)" % 700).is_true()
-	assert_int(weapon.ammo_in_mag).is_equal(30)
+	assert_int(weapon.ammo_in_mag).override_failure_message(
+		"换弹后弹药应为满弹匣").is_equal(30)
+
+
+func test_mouse_look_works_with_hud() -> void:
+	# 回归守卫：HUD 全屏 Control 曾默认 STOP 吞掉鼠标事件导致无法转视角
+	var out := await _context()
+	var runner: GdUnitSceneRunner = out[0]
+	var player := out[1] as CharacterBody3D
+	var hud_control := runner.scene().get_node("HUD/Control") as Control
+	assert_int(hud_control.mouse_filter).override_failure_message(
+		"HUD Control 不得拦截鼠标").is_equal(Control.MOUSE_FILTER_IGNORE)
+	await runner.simulate_mouse_move_relative(Vector2(300, 0))
+	assert_float(absf(player.rotation.y)).override_failure_message(
+		"鼠标视角失效").is_greater(0.0)
 
 
 func test_dummy_hit_flash_activates() -> void:

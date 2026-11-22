@@ -7,6 +7,7 @@
 [node name="Control" type="Control" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
+mouse_filter = 2
 
 [node name="ComboLabel" type="Label" parent="Control"]
 anchor_left = 0.5
