@@ -278,7 +278,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
 
 [node name="WaveManager" type="Node" parent="."]
 script = ExtResource("6_wave")
-spawn_points = Array[Node3D]([NodePath("Spawns/S1"), NodePath("Spawns/S2"), NodePath("Spawns/S3"), NodePath("Spawns/S4"), NodePath("Spawns/S5"), NodePath("Spawns/S6")])
 
 [node name="ComboSystem" type="Node" parent="."]
 script = ExtResource("5_combo")
